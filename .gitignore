@@ -1,0 +1,4 @@
+outputs
+__pycache__
+.mypy_cache
+ansatz_permutation

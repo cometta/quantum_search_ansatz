@@ -1,0 +1,32 @@
+
+# epochs: 100000
+# warmup_epochs: 10000
+epochs: 100
+warmup_epochs: 50
+seed: 123
+noise: false
+device: 
+    _target_: qiskit.providers.fake_provider.FakeCasablanca # device must have more qubits than problem, only support V1 devices
+transpile_q_layout: None
+circuit:
+    n_layers: 3
+qas:
+    #n_experts: 50
+    n_experts: 5
+    searcher: evolution
+    ea_pop_size: 25
+    ea_gens: 100
+permutation:
+    generator:
+        _target_: generate_permutation.Permutation
+        directory: ansatz_permutation
+        file_max_chunking: 100000
+        valid_qiskit_rs: ["Y","Z"]
+hamiltonian:
+    _target_: hamiltonian.h2.H2
+vqe:
+    _target_: vqe.custom_vqe.CustomVQE
+    optimizer:
+        _target_: qiskit.algorithms.optimizers.SPSA
+        maxiter: 2
+exact_value: auto

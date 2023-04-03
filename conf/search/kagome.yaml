@@ -1,0 +1,35 @@
+
+# epochs: 100000
+# warmup_epochs: 10000
+epochs: 10
+warmup_epochs: 5
+seed: 123
+noise: false
+device: 
+    _target_: qiskit.providers.fake_provider.FakeGuadalupe # device must have more qubits than problem, only support V1 devices
+transpile_q_layout: [1, 2, 3, 5, 8, 11, 14, 13, 12, 10, 7, 4]
+circuit:
+    n_layers: 3
+qas:
+    #n_experts: 50
+    n_experts: 5
+    searcher: evolution
+    # ea_pop_size: 25
+    # ea_gens: 100
+    ea_pop_size: 5
+    ea_gens: 1
+permutation:
+    generator:
+        _target_: generate_permutation.Permutation
+        directory: ansatz_permutation
+        file_max_chunking: 100000
+        valid_qiskit_rs: ["Z"]
+hamiltonian:
+    _target_: hamiltonian.kagome.Kagome
+vqe:
+    _target_: vqe.custom_vqe.CustomVQE
+    optimizer:
+        _target_: qiskit.algorithms.optimizers.SPSA
+        maxiter: 2
+exact_value: -18.0
+

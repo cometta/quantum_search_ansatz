@@ -1,0 +1,9 @@
+{
+    "python.linting.mypyEnabled": true,
+    "python.linting.enabled": true,
+    "mypy.runUsingActiveInterpreter": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.pylintArgs": [
+        "--enable=W0614"
+    ],
+}

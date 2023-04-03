@@ -1,0 +1,15 @@
+[[tool.mypy.overrides]]
+module = ['qiskit.*', 'qiskit_aer.*', 'pymoo.*']
+ignore_missing_imports = true
+
+
+
+
+
+[tool.pylint."messages control"]
+disable = [
+   "too-many-arguments",
+   "too-many-locals",
+   "attribute-defined-outside-init",
+   "too-many-instance-attributes"
+]
