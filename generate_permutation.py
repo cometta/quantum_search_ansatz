@@ -5,6 +5,8 @@ import json
 import logging
 import os
 import shutil
+import time
+import zipfile
 from itertools import product
 from pathlib import Path
 from typing import Iterator, List
@@ -14,6 +16,7 @@ from omegaconf import OmegaConf
 from utils import Singleton
 
 log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 # pylint: disable = too-few-public-methods
@@ -64,6 +67,7 @@ class Permutation(metaclass=Singleton):
                 # skip
                 log.info("Re-use and skip running permutation with n_qubits= %d", self.n_qubits)
         else:
+            log.info("directory %s does not exist", self.directory)
             self.generate()
 
     def _chunker(self, iterator: Iterator, chunk_size: int) -> Iterator[List[str]]:
@@ -81,15 +85,22 @@ class Permutation(metaclass=Singleton):
 
     def generate(self) -> None:
         """Write permutation to file"""
+        start_time = time.perf_counter()
         Path(self.directory).mkdir(parents=True, exist_ok=True)
-        log.info("write permutation to directory %s", self.directory)
-        for index, text in enumerate(
-            self._chunker(self.nas_search_qiskit_space, self.file_max_chunking)
-        ):
-            file_path = os.path.join(self.directory, f"ansatz_output_{index}.txt")
-            with open(file_path, mode="wt", encoding="utf-8") as write_file:
-                write_file.write("".join(text))
-            self.nas_search_qiskit_space_count += len(text)
+        log.info("please wait for creation of permutation at directory %s", self.directory)
+
+        with zipfile.ZipFile(
+            os.path.join(self.directory, "ansatz_output.zip"),
+            mode="w",
+            compression=zipfile.ZIP_DEFLATED,
+            compresslevel=9,
+        ) as zip_writer:
+            for index, text in enumerate(
+                self._chunker(self.nas_search_qiskit_space, self.file_max_chunking)
+            ):
+                zip_writer.writestr(f"ansatz_output_{index}.txt", "".join(text))
+
+                self.nas_search_qiskit_space_count += len(text)
 
         # write metadata
         with open(
@@ -108,3 +119,6 @@ class Permutation(metaclass=Singleton):
                     indent=2,
                 )
             )
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        log.info("Took total_time:%.4f seconds for generating permutation", total_time)

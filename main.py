@@ -3,7 +3,9 @@ import json
 import logging
 import os
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import partial
+from timeit import default_timer as timer
 from typing import Callable, List, cast
 
 import hydra
@@ -357,7 +359,7 @@ def main(cfg: DictConfig) -> None:
     rng = set_seed(cfg.search.seed)
 
     device = hydra.utils.instantiate(cfg.search.device)
-    log.info("device selected is %s number of qubits %d", device, device.configuration().n_qubits)
+    log.info("device selected is %s with %d qubits", device, device.configuration().n_qubits)
 
     hamiltonian_numpy_eigen = hydra.utils.instantiate(cfg.search.hamiltonian).create()
     n_qubits: int = 0
@@ -416,7 +418,9 @@ def main(cfg: DictConfig) -> None:
                 transpile_info,
             )
 
-        log.info("subnet: %s, epoch: %d  expert_idx: %d", subnet, epoch, expert_idx)
+        print(
+            f"subnet: {subnet}, epoch: {epoch}  expert_idx: {expert_idx}"
+        )  # do not write to log file
 
         params = model.get_params(subnet, expert_idx)
 
@@ -472,8 +476,10 @@ def main(cfg: DictConfig) -> None:
         log.info("Expected electronic ground state energy: %.10f", exact_value)
         log.info("Computed electronic ground state energy: %.10f", found_eigenvalue)
         log.info("Relative error: %.8f", rel_err(exact_value, found_eigenvalue))
-        log.info("Relative error: %.8f %%", 100 * rel_err(exact_value, found_eigenvalue))
 
 
 if __name__ == "__main__":
+    start = timer()
     main()  # pylint: disable = no-value-for-parameter
+    end = timer()
+    log.info("Total time taken %s", timedelta(seconds=end - start))

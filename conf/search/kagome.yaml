@@ -1,8 +1,7 @@
 
-# epochs: 100000
-# warmup_epochs: 10000
-epochs: 10
-warmup_epochs: 5
+
+epochs: 20000
+warmup_epochs: 2000
 seed: 123
 noise: false
 device: 
@@ -11,19 +10,16 @@ transpile_q_layout: [1, 2, 3, 5, 8, 11, 14, 13, 12, 10, 7, 4]
 circuit:
     n_layers: 3
 qas:
-    #n_experts: 50
-    n_experts: 5
+    n_experts: 50
     searcher: evolution
-    # ea_pop_size: 25
-    # ea_gens: 100
-    ea_pop_size: 5
-    ea_gens: 1
+    ea_pop_size: 25
+    ea_gens: 100
 permutation:
     generator:
         _target_: generate_permutation.Permutation
         directory: ansatz_permutation
         file_max_chunking: 100000
-        valid_qiskit_rs: ["Z"]
+        valid_qiskit_rs: ["Y","Z"]
 hamiltonian:
     _target_: hamiltonian.kagome.Kagome
 vqe:

@@ -2,10 +2,14 @@
 import json
 import logging
 import os
+import time
+import zipfile
 from itertools import islice
 from typing import List
 
 import numpy as np
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
 from nptyping import Float, Int, NDArray, Shape
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit import Parameter
@@ -16,7 +20,7 @@ log.setLevel(logging.INFO)
 
 
 def read_line(
-    line_number_zero_based: int, metadata: dict, permutation_directory: str = ""
+    line_number_zero_based: int, file_max_chunking: int, permutation_directory: str = ""
 ) -> List[tuple[List[str], List[tuple[int, int]]]]:
     """read permutations from file
 
@@ -25,36 +29,42 @@ def read_line(
 
     Args:
         line_number_zero_based (int): line number, start counting from zero
-        metadata (dict): permutations dict
+        file_max_chunking (int): maximum number of line to chunk
         permutation_directory (str): permutation directory
 
     Returns:
         List[tuple[List[str], List[tuple[List[int]]]]]: each line from the permutation file
     """
+    index = line_number_zero_based // file_max_chunking
+    offset = line_number_zero_based % file_max_chunking
 
-    index = line_number_zero_based // metadata["file_max_chunking"]
-    offset = line_number_zero_based % metadata["file_max_chunking"]
-
-    file_path = os.path.join(permutation_directory, f"ansatz_output_{index}.txt")
-
-    with open(file_path, mode="r", encoding="utf-8") as open_permutation_file:
-        line = list(
-            islice(open_permutation_file, offset, offset + 1)
-        )  # islice start index from zero
-        return json.loads(line[0])
+    with zipfile.ZipFile(
+        os.path.join(permutation_directory, "ansatz_output.zip"), mode="r"
+    ) as open_zip:
+        with open_zip.open(f"ansatz_output_{index}.txt") as open_permutation_file:
+            line = list(
+                islice(open_permutation_file, offset, offset + 1)
+            )  # islice start index from zero
+            return json.loads(line[0])
 
 
+@cached(
+    cache=LRUCache(maxsize=640 * 1024, getsizeof=len),
+    key=lambda n_qubits, n_layers, arch, seed, metadata, p_dir, device, transpile_q_layout: hashkey(
+        n_qubits, n_layers, str(arch), seed, p_dir, str(transpile_q_layout)
+    ),
+)
 def circuit_search(
     n_qubits: int,
     n_layers: int,
     arch: List[int],
     seed: int,
     metadata: dict,
-    permutation_directory: str,
+    p_dir: str,
     device: FakeBackend,
     transpile_q_layout: List[int],
 ) -> QuantumCircuit:
-    """Create ansatz
+    """Create ansatz cached with 640K
 
     Args:
         n_qubits (int): Number of qubits.
@@ -62,7 +72,7 @@ def circuit_search(
         arch (List[int]): Subnet list.
         seed (int): Random seed.
         metadata (dict): Permutation metadata.
-        permutation_directory (str): Permutation output directory.
+        p_dir (str): Permutation output directory.
         device (FakeBackend): Qiskit backend v1.
         transpile_q_layout (List[int]): Initial layout for transpiler.
 
@@ -73,7 +83,7 @@ def circuit_search(
     ansatz_custom = QuantumCircuit(n_qubits)
 
     for layer in range(n_layers):
-        line = read_line(arch[layer], metadata, permutation_directory)
+        line = read_line(arch[layer], metadata["file_max_chunking"], p_dir)
 
         for qubit_count, gate in enumerate(line[0]):
             if gate == "Y":
@@ -171,7 +181,7 @@ class CircuitSearchModel:
             arch=self.subnet,
             seed=self.seed,
             metadata=self.metadata,
-            permutation_directory=self.permutation_directory,
+            p_dir=self.permutation_directory,
             device=self.device,
             transpile_q_layout=transpile_q_layout
             if transpile_q_layout

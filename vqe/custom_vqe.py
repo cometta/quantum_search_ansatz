@@ -46,9 +46,6 @@ class CustomVQE(MinimumEigensolver):
                 self._callback(value)
             return value
 
-        # Select an initial point for the ansatzs' parameters
-        # x0 = np.pi/4 * rng.random(self._circuit.num_parameters)
-        # x0 = np.pi/4 * np.random.rand(self._circuit.num_parameters)
         x0 = self._params  # pylint: disable = invalid-name
 
         # Run optimization

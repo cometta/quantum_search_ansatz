@@ -2,11 +2,13 @@
 import logging
 
 import numpy as np
+from pymoo.config import Config
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 
 from evolution import nsganet as engine
 
+Config.warnings["not_compiled"] = False
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
@@ -107,7 +109,9 @@ class NAS(Problem):
                 acc, energy = self.eval_func(x[i])
                 self.result_dict[str(x[i])] = acc, energy
 
-            log.info("==evaluation subnet:%s score:%f  energy:%f", str(x[i]), acc, energy)
+            print(
+                f"==evaluation subnet:{str(x[i])} score:{acc}  energy:{energy}"
+            )  # do not write to log file
 
             objs[i, 0] = 100 - acc  # performance['valid_acc']
             # objs[i, 1] = 10  # performance['flops']

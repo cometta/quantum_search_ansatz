@@ -10,5 +10,6 @@ hydra:
 # python train_search_kagome.py --searcher 'evolution' --n_experts 50 --ea_gens 100 --epochs 100000 --warmup_epochs 10000  --ea_gens 1; echo -e "\a"
 
 defaults:
-  - search: h2 #kagome
+  - search: kagome #h2 #kagome
+  - _self_ 
   
